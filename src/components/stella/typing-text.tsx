@@ -31,7 +31,7 @@ export default function TypewriterTitle({
     { text: "Multiple Words", deleteAfter: true },
     { text: "Auto Loop", deleteAfter: false },
   ],
-  typingSpeed = 20,
+  typingSpeed = 10,
   startDelay = 500,
   autoLoop = false,
   loopDelay = 2000,
