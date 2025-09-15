@@ -1,31 +1,60 @@
+import Pusher, { type Channel } from "pusher-js";
 import {
   createContext,
   useContext,
+  useEffect,
   useRef,
   useState,
   type ReactNode,
 } from "react";
+import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
 interface SpeechContextType {
   transcript: string;
   isRecording: boolean;
   startRecording: () => void;
   stopRecording: () => void;
+  chat: ChatMessage[];
+  voiceLoading: boolean;
+  isSpeaking: boolean;
 }
 
-type Result = {
-  action: string;
-  product: string;
-  quantity: number;
-};
+interface Message {
+  session_id: string;
+  correlation_id: string;
+  timestamp: Date;
+  data: {
+    intention: string;
+    items: [
+      {
+        item: string;
+        quantidade: number;
+      }
+    ];
+    response: string;
+    stella_analysis: string;
+    reason: string | null;
+  };
+}
+
+interface ChatMessage {
+  from: "user" | "stella";
+  text: string;
+}
 
 const SpeechContext = createContext<SpeechContextType | undefined>(undefined);
 
 export function SpeechProvider({ children }: { children: ReactNode }) {
-  const [result, setResult] = useState<Result | null>(null);
   const [isRecording, setIsRecording] = useState(false);
-  const recorder = useRef<SpeechRecognition | null>(null);
   const [transcript, setTranscript] = useState("");
+  const [chat, setChat] = useState<ChatMessage[]>([]);
+  const [voiceLoading, setVoiceLoading] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  const recorder = useRef<SpeechRecognition | null>(null);
+  const pusherRef = useRef<Pusher | null>(null);
+  const channelRef = useRef<Channel | null>(null);
+  const sessionId = useRef(globalThis.crypto?.randomUUID?.());
 
   function stopRecording() {
     setIsRecording(false);
@@ -53,6 +82,10 @@ export function SpeechProvider({ children }: { children: ReactNode }) {
         text += event.results[i][0].transcript;
       }
       setTranscript(text);
+
+      setChat((prev) => [...prev, { from: "user", text }]);
+
+      await sendSpeechMessage(text);
       JSON.stringify({
         comando: text,
       });
@@ -73,9 +106,121 @@ export function SpeechProvider({ children }: { children: ReactNode }) {
     console.log(transcript);
   }
 
+  console.log(sessionId.current);
+
+  async function sendSpeechMessage(text: string) {
+    const payload = {
+      session_id: sessionId.current,
+      correlation_id: globalThis.crypto?.randomUUID?.() ?? String(Date.now()),
+      timestamp: new Date().toISOString(),
+      data: {
+        text,
+        userId: "user123",
+      },
+    };
+
+    try {
+      const res = await fetch("http://localhost:8000/speech/process", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errText}`);
+      }
+    } catch (e: any) {
+      console.error("Falha ao enviar speech via HTTP:", e);
+    }
+  }
+
+  async function speak(text: string) {
+    setVoiceLoading(true);
+    const client = new ElevenLabsClient({
+      apiKey: "sk_af690c8bb89739c5a7101ab57541397df204b92cec2b345b",
+    });
+
+    try {
+      // Retorna um ReadableStream
+      const audioStream = await client.textToSpeech.convert(
+        "EXAVITQu4vr4xnSDxMaL",
+        {
+          outputFormat: "mp3_44100_128",
+          text,
+          modelId: "eleven_multilingual_v2",
+          voiceSettings: {
+            speed: 1.15,
+          },
+        }
+      );
+
+      // Converte o stream em array de bytes
+      const arrayBuffer = await new Response(audioStream).arrayBuffer();
+
+      // Cria o Blob a partir do ArrayBuffer
+      const audioBlob = new Blob([arrayBuffer], { type: "audio/mpeg" });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audioElement = new Audio(audioUrl);
+      setVoiceLoading(false);
+      setIsSpeaking(true);
+      await audioElement.play();
+      audioElement.onended = () => {
+        setIsSpeaking(false);
+      };
+    } catch (error) {
+      console.error("Erro ao gerar voz:", error);
+    }
+  }
+
+  useEffect(() => {
+    pusherRef.current = new Pusher("6e145679d2e5714d4e58", {
+      cluster: "us2",
+      authEndpoint: "http://localhost:8000/auth/pusher",
+      auth: {
+        params: {
+          session_id: sessionId.current,
+        },
+      },
+    });
+
+    channelRef.current = pusherRef.current.subscribe("private-agent-123");
+
+    const onSpeech = async (data: Message) => {
+      setChat((prev) => [
+        ...prev,
+        { from: "stella", text: data.data.response },
+      ]);
+      await speak(data.data.response);
+    };
+
+    // const onFace = (data: Message) => {
+    //   setMessages((prev) => [...prev, data]);
+    // };
+
+    channelRef.current.bind("server-speech-output", onSpeech);
+    // channelRef.current.bind("server-face-output", onFace);
+
+    return () => {
+      if (channelRef.current) {
+        channelRef.current.unbind("server-speech-output", onSpeech);
+        // channelRef.current.unbind("server-face-output", onFace);
+        pusherRef.current?.unsubscribe("private-agent-123");
+      }
+      pusherRef.current?.disconnect();
+    };
+  }, []);
+
   return (
     <SpeechContext.Provider
-      value={{ isRecording, startRecording, stopRecording, transcript }}
+      value={{
+        isRecording,
+        voiceLoading,
+        startRecording,
+        stopRecording,
+        transcript,
+        chat,
+        isSpeaking,
+      }}
     >
       {children}
     </SpeechContext.Provider>
