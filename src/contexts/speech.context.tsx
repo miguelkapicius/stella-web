@@ -55,6 +55,7 @@ export function SpeechProvider({ children }: { children: ReactNode }) {
   const pusherRef = useRef<Pusher | null>(null);
   const channelRef = useRef<Channel | null>(null);
   const sessionId = useRef(globalThis.crypto?.randomUUID?.());
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   function stopRecording() {
     setIsRecording(false);
@@ -154,21 +155,24 @@ export function SpeechProvider({ children }: { children: ReactNode }) {
         }
       );
 
-      // Converte o stream em array de bytes
       const arrayBuffer = await new Response(audioStream).arrayBuffer();
-
-      // Cria o Blob a partir do ArrayBuffer
       const audioBlob = new Blob([arrayBuffer], { type: "audio/mpeg" });
       const audioUrl = URL.createObjectURL(audioBlob);
-      const audioElement = new Audio(audioUrl);
+
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+      }
+
+      audioRef.current = new Audio(audioUrl);
       setVoiceLoading(false);
       setIsSpeaking(true);
-      await audioElement.play();
-      audioElement.onended = () => {
-        setIsSpeaking(false);
-      };
+      audioRef.current.onended = () => setIsSpeaking(false);
+      await audioRef.current.play();
     } catch (error) {
       console.error("Erro ao gerar voz:", error);
+      setVoiceLoading(false);
+      setIsSpeaking(false);
     }
   }
 

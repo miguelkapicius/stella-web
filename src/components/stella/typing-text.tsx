@@ -9,7 +9,7 @@
  */
 
 import { motion, useAnimate } from "motion/react";
-import { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 
 interface TypewriterSequence {
   text: string;
@@ -25,77 +25,74 @@ interface TypewriterTitleProps {
   loopDelay?: number;
 }
 
-export default function TypewriterTitle({
-  sequences = [
-    { text: "Typewriter", deleteAfter: true },
-    { text: "Multiple Words", deleteAfter: true },
-    { text: "Auto Loop", deleteAfter: false },
-  ],
+function TypewriterTitle({
+  sequences,
   typingSpeed = 10,
   startDelay = 500,
   autoLoop = false,
   loopDelay = 2000,
 }: TypewriterTitleProps) {
   const [scope, animate] = useAnimate();
+  const lastTextRef = useRef<string>("");
 
   useEffect(() => {
+    if (!sequences || sequences.length === 0) return;
+
+    const newText = sequences[0].text;
+
+    // Se o texto não mudou, não reinicia a animação
+    if (lastTextRef.current === newText) return;
+    lastTextRef.current = newText;
+
     let isActive = true;
 
     const typeText = async () => {
       const titleElement = scope.current.querySelector("[data-typewriter]");
       if (!titleElement) return;
 
-      while (isActive) {
-        // Reset the text content
-        await animate(scope.current, { opacity: 1 });
-        titleElement.textContent = "";
+      // Reset da opacidade e texto
+      await animate(scope.current, { opacity: 1 });
+      titleElement.textContent = "";
 
-        // Wait for initial delay on first run
-        await new Promise((resolve) => setTimeout(resolve, startDelay));
+      // Wait for initial delay on first run
+      await new Promise((resolve) => setTimeout(resolve, startDelay));
 
-        // Process each sequence
-        for (const sequence of sequences) {
+      for (const sequence of sequences) {
+        if (!isActive) break;
+
+        // Type out the sequence text
+        for (let i = 0; i < sequence.text.length; i++) {
           if (!isActive) break;
-
-          // Type out the sequence text
-          for (let i = 0; i < sequence.text.length; i++) {
-            if (!isActive) break;
-            titleElement.textContent = sequence.text.slice(0, i + 1);
-            await new Promise((resolve) => setTimeout(resolve, typingSpeed));
-          }
-
-          // Pause after typing if specified
-          if (sequence.pauseAfter) {
-            await new Promise((resolve) =>
-              setTimeout(resolve, sequence.pauseAfter)
-            );
-          }
-
-          // Delete the text if specified
-          if (sequence.deleteAfter) {
-            // Small pause before deleting
-            await new Promise((resolve) => setTimeout(resolve, 500));
-
-            for (let i = sequence.text.length; i > 0; i--) {
-              if (!isActive) break;
-              titleElement.textContent = sequence.text.slice(0, i);
-              await new Promise((resolve) =>
-                setTimeout(resolve, typingSpeed / 2)
-              );
-            }
-          }
+          titleElement.textContent = sequence.text.slice(0, i + 1);
+          await new Promise((resolve) => setTimeout(resolve, typingSpeed));
         }
 
-        if (!autoLoop || !isActive) break;
+        if (sequence.pauseAfter) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, sequence.pauseAfter)
+          );
+        }
 
-        // Wait before starting next loop
+        if (sequence.deleteAfter) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          for (let i = sequence.text.length; i > 0; i--) {
+            if (!isActive) break;
+            titleElement.textContent = sequence.text.slice(0, i);
+            await new Promise((resolve) =>
+              setTimeout(resolve, typingSpeed / 2)
+            );
+          }
+        }
+      }
+
+      if (autoLoop && isActive) {
         await new Promise((resolve) => setTimeout(resolve, loopDelay));
+        if (isActive) typeText();
       }
     };
 
     typeText();
 
-    // Cleanup function to stop the animation when component unmounts
     return () => {
       isActive = false;
     };
@@ -105,15 +102,17 @@ export default function TypewriterTitle({
     <div className="relative w-full">
       <div className="relative z-10 flex flex-col" ref={scope}>
         <motion.div
-          className="text-2xl text-black dark:text-white flex items-center gap-2 font-medium"
+          className="text-3xl text-black dark:text-white flex items-center gap-2 font-medium"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
           <span data-typewriter className="inline-block animate-cursor pr-1">
-            {sequences[0].text}
+            {sequences![0].text}
           </span>
         </motion.div>
       </div>
     </div>
   );
 }
+
+export const MemoTypewriterTitle = React.memo(TypewriterTitle);
