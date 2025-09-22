@@ -102,11 +102,14 @@ function TypewriterTitle({
     <div className="relative w-full">
       <div className="relative z-10 flex flex-col" ref={scope}>
         <motion.div
-          className="text-3xl text-black dark:text-white flex items-center gap-2 font-medium"
+          className="text-5xl bg-gradient-to-r from-stone-100/60 via-stone-100 to-stone-100/60 bg-clip-text text-transparent flex items-center gap-2 font-medium max-w-4xl text-center mx-auto leading-14"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          <span data-typewriter className="inline-block animate-cursor pr-1">
+          <span
+            data-typewriter
+            className="inline-block animate-cursor pr-1 tracking-tight py-2"
+          >
             {sequences![0].text}
           </span>
         </motion.div>

@@ -144,7 +144,7 @@ export function SpeechProvider({ children }: { children: ReactNode }) {
     try {
       // Retorna um ReadableStream
       const audioStream = await client.textToSpeech.convert(
-        "EXAVITQu4vr4xnSDxMaL",
+        "mPDAoQyGzxBSkE0OAOKw",
         {
           outputFormat: "mp3_44100_128",
           text,

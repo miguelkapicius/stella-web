@@ -1,4 +1,6 @@
 import React, { useEffect, useRef } from "react";
+import { Button } from "./ui/button";
+import { Mic2 } from "lucide-react";
 
 export interface StellaWaveOptions {
   amplitude?: number;
@@ -185,7 +187,7 @@ export const StellaWave: React.FC<StellaWaveOptions> = (props) => {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute left-0 bottom-1/3 w-screen h-40 duration-500 transition-all ease-in-out"
+      className="absolute left-0 bottom-1/3 w-screen h-40 flex items-center justify-center"
     />
   );
 };
