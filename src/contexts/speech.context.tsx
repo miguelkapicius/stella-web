@@ -86,6 +86,7 @@ export function SpeechProvider({ children }: { children: ReactNode }) {
 
       setChat((prev) => [...prev, { from: "user", text }]);
 
+      console.log("Texto reconhecido:", text, " - Enviando para backend...");
       await sendSpeechMessage(text);
       JSON.stringify({
         comando: text,
@@ -120,6 +121,8 @@ export function SpeechProvider({ children }: { children: ReactNode }) {
       },
     };
 
+    console.log("Payload:", payload);
+
     try {
       const res = await fetch("http://localhost:8000/speech/process", {
         method: "POST",
@@ -138,7 +141,7 @@ export function SpeechProvider({ children }: { children: ReactNode }) {
   async function speak(text: string) {
     setVoiceLoading(true);
     const client = new ElevenLabsClient({
-      apiKey: "sk_af690c8bb89739c5a7101ab57541397df204b92cec2b345b",
+      apiKey: "sk_c3222e5821cf2d1f52d38c4d6a80b2869858a966a8d249a7",
     });
 
     try {
