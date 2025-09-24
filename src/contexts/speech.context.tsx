@@ -86,6 +86,7 @@ export function SpeechProvider({ children }: { children: ReactNode }) {
 
       setChat((prev) => [...prev, { from: "user", text }]);
 
+      console.log("Texto reconhecido:", text, " - Enviando para backend...");
       await sendSpeechMessage(text);
       JSON.stringify({
         comando: text,
@@ -119,6 +120,8 @@ export function SpeechProvider({ children }: { children: ReactNode }) {
         userId: "user123",
       },
     };
+
+    console.log("Payload:", payload);
 
     try {
       const res = await fetch("http://localhost:8000/speech/process", {
