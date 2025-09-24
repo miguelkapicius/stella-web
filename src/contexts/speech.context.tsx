@@ -138,7 +138,7 @@ export function SpeechProvider({ children }: { children: ReactNode }) {
   async function speak(text: string) {
     setVoiceLoading(true);
     const client = new ElevenLabsClient({
-      apiKey: "sk_af690c8bb89739c5a7101ab57541397df204b92cec2b345b",
+      apiKey: import.meta.env.VITE_ELEVENLABS_API_KEY,
     });
 
     try {

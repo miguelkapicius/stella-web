@@ -1,5 +1,4 @@
 import { useSpeech } from "./contexts/speech.context";
-import GeneratingText from "./components/stella/generating-text";
 import { StellaWave } from "./components/stella-wave";
 import { MemoTypewriterTitle } from "./components/stella/typing-text";
 import { Button } from "./components/ui/button";
@@ -7,24 +6,15 @@ import {
   AudioLines,
   AudioWaveformIcon,
   ChevronRight,
-  FireExtinguisherIcon,
-  Mic2Icon,
   MicIcon,
   MicOff,
-  Square,
 } from "lucide-react";
 import { Separator } from "./components/ui/separator";
 import { cn } from "./lib/utils";
 
 export function App() {
-  const {
-    chat,
-    startRecording,
-    stopRecording,
-    isRecording,
-    voiceLoading,
-    isSpeaking,
-  } = useSpeech();
+  const { chat, startRecording, stopRecording, isRecording, isSpeaking } =
+    useSpeech();
 
   console.log(isSpeaking);
 
