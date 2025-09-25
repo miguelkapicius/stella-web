@@ -1,6 +1,4 @@
 import React, { useEffect, useRef } from "react";
-import { Button } from "./ui/button";
-import { Mic2 } from "lucide-react";
 
 export interface StellaWaveOptions {
   amplitude?: number;
@@ -166,10 +164,14 @@ class StellaWaveCore {
 export const StellaWave: React.FC<StellaWaveOptions> = (props) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const waveRef = useRef<StellaWaveCore | null>(null);
+  const initialOptionsRef = useRef<StellaWaveOptions>(props);
 
   useEffect(() => {
     if (canvasRef.current) {
-      waveRef.current = new StellaWaveCore(canvasRef.current, props);
+      waveRef.current = new StellaWaveCore(
+        canvasRef.current,
+        initialOptionsRef.current
+      );
       waveRef.current.start();
     }
     return () => {

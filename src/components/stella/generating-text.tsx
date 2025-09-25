@@ -11,7 +11,6 @@
  */
 
 import { cn } from "@/lib/utils";
-import { Text } from "lucide-react";
 import { motion } from "motion/react";
 
 interface Text_01Props {
